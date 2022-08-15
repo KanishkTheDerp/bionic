@@ -55,6 +55,7 @@ libc_common_flags = [
     "-Wno-deprecated-declarations",
     "-Wno-gcc-compat",
     "-Wframe-larger-than=2048",
+    "-O3",
 
     // Try to catch typical 32-bit assumptions that break with 64-bit pointers.
     "-Werror=pointer-to-int-cast",
@@ -126,9 +127,10 @@ cc_defaults {
         malloc_pattern_fill_contents: {
             cflags: ["-DSCUDO_PATTERN_FILL_CONTENTS"],
         },
-        malloc_not_svelte: {
-            cflags: ["-DUSE_SCUDO"],
-        },
+    },
+
+    lto: {
+        never: true,
     },
 }
 
@@ -157,7 +159,6 @@ cc_defaults {
         "libc_jemalloc_wrapper",
     ],
     header_libs: ["gwp_asan_headers"],
-    product_variables: libc_scudo_product_variables,
 }
 
 // Functions not implemented by jemalloc directly, or that need to
@@ -268,6 +269,7 @@ cc_library_static {
         "-DWILDABBR=\"\"",
         "-DNO_RUN_TIME_WARNINGS_ABOUT_YEAR_2000_PROBLEMS_THANK_YOU",
         "-Dlint",
+        "-O3",
     ],
 
     local_include_dirs: ["tzcode/"],
@@ -371,12 +373,18 @@ cc_library_static {
                 "upstream-freebsd/lib/libc/string/wmemset.c",
             ],
         },
+        x86_64: {
+            exclude_srcs: [
+                "upstream-freebsd/lib/libc/string/wmemset.c",
+            ],
+        },
     },
 
     cflags: [
         "-Wno-sign-compare",
         "-Wno-unused-parameter",
         "-include freebsd-compat.h",
+        "-O3",
     ],
 
     local_include_dirs: [
@@ -396,6 +404,7 @@ cc_library_static {
         "-Wno-sign-compare",
         "-include freebsd-compat.h",
         "-Wframe-larger-than=66000",
+        "-O3",
     ],
 
     local_include_dirs: [
@@ -450,6 +459,7 @@ cc_library_static {
         "-Wno-unused-parameter",
         "-DPOSIX_MISTAKE",
         "-include netbsd-compat.h",
+        "-O3",
     ],
 
     local_include_dirs: [
@@ -578,6 +588,7 @@ cc_library_static {
         "-Wno-sign-compare",
         "-Wno-unused-parameter",
         "-include openbsd-compat.h",
+        "-O3",
     ],
 
     local_include_dirs: [
@@ -602,6 +613,7 @@ cc_library_static {
         "-include openbsd-compat.h",
         "-Wno-sign-compare",
         "-Wframe-larger-than=5000",
+        "-O3",
     ],
 
     local_include_dirs: [
@@ -691,6 +703,7 @@ cc_library_static {
         "-Wno-sign-compare",
         "-Wno-unused-parameter",
         "-include openbsd-compat.h",
+        "-O3",
     ],
 
     local_include_dirs: [
@@ -739,6 +752,7 @@ cc_library_static {
     cflags: [
         "-Wno-sign-compare",
         "-include openbsd-compat.h",
+        "-O3",
     ],
 
     local_include_dirs: [
@@ -765,6 +779,7 @@ cc_library_static {
     cflags: [
         "-U_FORTIFY_SOURCE",
         "-D__BIONIC_DECLARE_FORTIFY_HELPERS",
+        "-O3",
     ],
 
     arch: {
@@ -973,6 +988,7 @@ cc_library_static {
 
                 // avx2 functions
                 "arch-x86/kabylake/string/avx2-wmemset-kbl.S",
+                "arch-x86/kabylake/string/avx2-memcpy-kbl.S",
             ],
 
             exclude_srcs: [
@@ -982,20 +998,32 @@ cc_library_static {
             ],
         },
         x86_64: {
+            cflags: ["-include openbsd-compat.h"],
+            asflags: ["-Wno-unused-command-line-argument"],
+            include_dirs: ["bionic/libc/arch-x86_64/include"],
+            local_include_dirs: [
+                // "private",
+                 "upstream-openbsd/android/include",
+            ],
             srcs: [
-                "arch-x86_64/string/sse2-memmove-slm.S",
-                "arch-x86_64/string/sse2-memset-slm.S",
-                "arch-x86_64/string/sse2-stpcpy-slm.S",
-                "arch-x86_64/string/sse2-stpncpy-slm.S",
-                "arch-x86_64/string/sse2-strcat-slm.S",
-                "arch-x86_64/string/sse2-strcpy-slm.S",
-                "arch-x86_64/string/sse2-strlen-slm.S",
-                "arch-x86_64/string/sse2-strncat-slm.S",
-                "arch-x86_64/string/sse2-strncpy-slm.S",
-                "arch-x86_64/string/sse4-memcmp-slm.S",
-                "arch-x86_64/string/ssse3-strcmp-slm.S",
-                "arch-x86_64/string/ssse3-strncmp-slm.S",
-                "arch-x86_64/string/avx2-wmemset-kbl.S",
+                "arch-x86_64/generic/string/wmemset.c",
+
+                "arch-x86_64/silvermont/string/sse2-memmove-slm.S",
+                "arch-x86_64/silvermont/string/sse2-memcpy-slm.s",
+                "arch-x86_64/silvermont/string/sse2-memset-slm.S",
+                "arch-x86_64/silvermont/string/sse2-stpcpy-slm.S",
+                "arch-x86_64/silvermont/string/sse2-stpncpy-slm.S",
+                "arch-x86_64/silvermont/string/sse2-strcat-slm.S",
+                "arch-x86_64/silvermont/string/sse2-strcpy-slm.S",
+                "arch-x86_64/silvermont/string/sse2-strlen-slm.S",
+                "arch-x86_64/silvermont/string/sse2-strncat-slm.S",
+                "arch-x86_64/silvermont/string/sse2-strncpy-slm.S",
+                "arch-x86_64/silvermont/string/sse4-memcmp-slm.S",
+                "arch-x86_64/silvermont/string/ssse3-strcmp-slm.S",
+                "arch-x86_64/silvermont/string/ssse3-strncmp-slm.S",
+
+                "arch-x86_64/kabylake/string/avx2-wmemset-kbl.S",
+                "arch-x86_64/kabylake/string/avx2-memcpy-kbl.S",
 
                 "arch-x86_64/bionic/__bionic_clone.S",
                 "arch-x86_64/bionic/_exit_with_stack_teardown.S",
@@ -1248,7 +1276,10 @@ cc_library_static {
 // ========================================================
 
 cc_library_static {
-    defaults: ["libc_defaults"],
+    defaults: [
+        "libc_defaults",
+        "target_alternative_futex_waiters_defaults"
+    ],
     srcs: [
         "bionic/bionic_elf_tls.cpp",
         "bionic/pthread_atfork.cpp",
@@ -1422,6 +1453,7 @@ cc_library_static {
     cflags: [
         "-fvisibility=hidden",
         "-DLIBC_STATIC",
+        "-O3",
     ],
 
     whole_static_libs: [
@@ -1509,6 +1541,9 @@ cc_library_static {
         x86: {
             srcs: ["arch-x86/static_function_dispatch.S"],
         },
+        x86_64: {
+            srcs: ["arch-x86_64/static_function_dispatch.S"],
+        },
         arm: {
             srcs: ["arch-arm/static_function_dispatch.S"],
         },
@@ -1533,6 +1568,9 @@ cc_library_static {
     arch: {
         x86: {
             srcs: ["arch-x86/dynamic_function_dispatch.cpp"],
+        },
+        x86_64: {
+            srcs: ["arch-x86_64/dynamic_function_dispatch.cpp"],
         },
         arm: {
             srcs: ["arch-arm/dynamic_function_dispatch.cpp"],
@@ -1793,9 +1831,6 @@ cc_library {
     // time, because small symbols are grouped together.
     sort_bss_symbols_by_size: true,
 
-    lto: {
-        never: true,
-    },
 }
 
 genrule {
@@ -1997,6 +2032,7 @@ cc_library {
     static_ndk_lib: true,
     static_libs: ["libasync_safe"],
     vendor_available: true,
+    product_available: true,
 
     static: {
         system_shared_libs: [],
@@ -2084,6 +2120,7 @@ cc_defaults {
         "-Wno-gcc-compat",
         "-Wall",
         "-Werror",
+        "-O3",
     ],
     sanitize: {
         never: true,
@@ -2216,7 +2253,9 @@ cc_library_static {
       }
     },
     sdk_version: "minimum",
-
+    lto: {
+        thin: true,
+    },
     defaults: ["crt_defaults"],
 }
 
@@ -2228,7 +2267,9 @@ cc_library_static {
       }
     },
     sdk_version: "minimum",
-
+    lto: {
+        thin: true,
+    },
     defaults: ["crt_defaults"],
 }
 
